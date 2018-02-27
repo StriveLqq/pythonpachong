@@ -1,0 +1,84 @@
+# made by lqq
+
+import re
+import requests
+from requests.exceptions import RequestException
+
+# 程序用于爬取4399上的游戏
+
+
+# 首先获取列表页源代码
+def get_list_page(url) -> object:
+    try:
+        response = requests.get(url)
+        response.encoding = 'gb2312'    # 将编码转换为网页编码，以防止输出的中文为乱码
+        if response.status_code == 200:
+            return response.text
+        return None
+    except RequestException:
+        return None
+
+
+# 接着，用正则表达式从获取的列表页源代码中提取游戏地址
+def parse_list_page(html):
+    pattern = re.compile('<a href="(.*?)"><.*?alt="(.*?)" />',re.I)
+    items = re.findall(pattern,html)
+    return items
+
+
+# 接下来对提取出来的游戏地址进行处理,获取其源代码
+def parse_get_html(url2):
+    try:
+        response = requests.get(url2)
+        response.encoding = 'gb2312'  # 将编码转换为网页编码，以防止输出的中文为乱码
+        if response.status_code == 200:
+            return response.text
+        return None
+    except RequestException:
+        return None
+
+
+# 接下来，对获取到的游戏页源代码进行处理，提取游戏网址
+def get_game_page(html1):
+    pattern = re.compile('_strGamePath="(.*?)",game_title=.*?setAddFav.*?<script language="javascript" src="(.*?)"><',re.S)
+    items = re.findall(pattern,html1)
+    return items
+
+
+# 可以分析到4399中有一些反爬措施来隐藏游戏地址，下面来提取
+def search_html(url4):
+    try:
+        response = requests.get(url4)
+        if response.status_code == 200:
+            return response.text
+        return None
+    except RequestException:
+        return None
+
+
+def search_url(html2):
+    pattern = re.compile('webServer = "(.*?)";', re.S)
+    items = re.findall(pattern, html2)
+    return items
+
+
+def main():
+    url = 'http://www.4399.com/flash/game100.htm'
+    html = get_list_page(url)
+    htmlitems = parse_list_page(html)
+    url1 = 'http://www.4399.com'
+    for i in htmlitems:
+        url2 = url1 + i[0]
+        html1 = parse_get_html(url2)
+        url3 = get_game_page(html1)
+        for j in url3:
+            url4 = url1 + j[1]
+            html2 = search_html(url4)
+            url5 = search_url(html2)
+            item = j[0].split()
+            url6 = url5 + item
+            url7 = url6[0] + url6[1]
+            print(url7)
+
+if __name__ == '__main__':
+    main()
